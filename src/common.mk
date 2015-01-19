@@ -11,8 +11,12 @@
 
 # -Wno-format-zero-length: permit printf("");
 # -Wno-unused-parameter: permit a function to ignore an argument
-CFLAGS_STD   := -std=gnu99 -g -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -D_REENTRANT \
-		-Wall -Wno-unused-parameter -Wno-format-zero-length -pthread -fPIC
+
+CFLAGS_SHARED = -g -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -D_REENTRANT \
+		-Wall -Wno-unused-parameter -pthread -fPIC
+
+CFLAGS_STD   := -std=gnu99 -Wno-format-zero-length $(CFLAGS_SHARED)
+CXXFLAGS_STD := -std=c++0x $(CFLAGS_SHARED)
 LDFLAGS_STD  := -lm -lpthread
 
 ROOT_PATH    := $(subst /src/common.mk,,$(realpath $(lastword $(MAKEFILE_LIST))))
@@ -25,6 +29,7 @@ SOLNS_PATH   := $(ROOT_PATH)/solns
 CONFIG_DIR   := $(shell pwd)/../../config
 
 CC           := gcc
+CXX          := g++
 LD           := gcc
 
 #.SILENT:
@@ -133,7 +138,7 @@ endif
 libdeps = $(filter $(wildcard $(LIB_PATH)/*.a), $(patsubst -l%, $(LIB_PATH)/lib%.a, $(sort $(filter -l%, $(1)))))
 
 # common
-CFLAGS_COMMON  := -I$(SRC_PATH) -DCONFIG_DIR='"$(CONFIG_DIR)"' $(CFLAGS_STD)
+CFLAGS_COMMON  := -I$(SRC_PATH) -DCONFIG_DIR='"$(CONFIG_DIR)"'
 LDFLAGS_COMMON := -L$(LIB_PATH) -lcommon $(LDFLAGS_STD)
 
 # math
@@ -160,9 +165,9 @@ LDFLAGS_VX_GL := -L$(LIB_PATH) -lvxgl -lGL -lX11 $(LDFLAGS_VX) $(LDFLAGS_MATH) $
 CFLAGS_VX_GTK  := -I$(SRC_PATH)
 LDFLAGS_VX_GTK := -L$(LIB_PATH) -lvxgtk $(LDFLAGS_VX_GL) $(LDFLAGS_VX) -lz
 
-# rob550
-CFLAGS_ROB550  := -I$(SRC_PATH) $(CFLAGS_VX_GTK) $(CFLAGS_IMAGESOURCE) $(CFLAGS_MATH) $(CFLAGS_COMMON) $(CFLAGS_STD)
-LDFLAGS_ROB550 := -L$(LIB_PATH) -lrob550 $(LDFLAGS_VX_GTK) $(LDFLAGS_IMAGESOURCE) $(LDFLAGS_MATH) $(LDFLAGS_COMMON) $(LDFLAGS_STD)
+# eecs467
+CFLAGS_EECS467  := -I$(SRC_PATH) $(CFLAGS_VX_GTK) $(CFLAGS_IMAGESOURCE) $(CFLAGS_MATH) $(CFLAGS_COMMON)
+LDFLAGS_EECS467 := -L$(LIB_PATH) -leecs467 $(LDFLAGS_VX_GTK) $(LDFLAGS_IMAGESOURCE) $(LDFLAGS_MATH) $(LDFLAGS_COMMON) $(LDFLAGS_STD)
 
 ############################################################
 #
@@ -180,7 +185,7 @@ LDFLAGS_ROB550 := -L$(LIB_PATH) -lrob550 $(LDFLAGS_VX_GTK) $(LDFLAGS_IMAGESOURCE
 
 %.o: %.cpp
 	@echo "    $@"
-	@g++ -c -o $@ $< $(CFLAGS_CXX)
+	@$(CXX) -c -o $@ $< $(CXXFLAGS)
 
 
 MAKEFLAGS += --no-print-directory

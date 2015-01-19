@@ -27,10 +27,12 @@ BIN_REXARM_SEQUENCE_TEST = $(BIN_PATH)/rexarm_sequence_test
 BIN_EECS467_REXARM_EXAMPLE = $(BIN_PATH)/eecs467_rexarm_example
 BIN_EECS467_MAEBOT_EXAMPLE = $(BIN_PATH)/eecs467_maebot_example
 BIN_EECS467_MAEBOT_VIDEO_TELOP = $(BIN_PATH)/eecs467_maebot_video_telop
+BIN_EECS467_MAEBOT_A0 = $(BIN_PATH)/eecs467_maebot_a0
 
 ALL = $(LIB_EECS467) $(BIN_EECS467_GUI_EXAMPLE) $(BIN_EECS467_REXARM_EXAMPLE) \
       $(BIN_EECS467_MAEBOT_EXAMPLE) $(BIN_EECS467_MAEBOT_VIDEO_TELOP) \
-      $(BIN_REXARM_DEBUG_GUI) $(BIN_REXARM_SEQUENCE_TEST)
+      $(BIN_REXARM_DEBUG_GUI) $(BIN_REXARM_SEQUENCE_TEST) \
+      $(BIN_EECS467_MAEBOT_A0)
 
 all: $(ALL)
 
@@ -61,6 +63,10 @@ $(BIN_EECS467_MAEBOT_EXAMPLE): maebot_example.o $(LIBDEPS)
 $(BIN_EECS467_MAEBOT_VIDEO_TELOP): maebot_video_teleop.o $(LIBDEPS)
 	@echo "\t$@"
 	@$(CC) -o $@ $^ $(LDFLAGS)
+
+$(BIN_EECS467_MAEBOT_A0): maebot_a0.o $(LIB_EECS467) $(LIBDEPS)
+	@echo "\t$@"
+	@$(CC) -o $@ $^ $(LDFLAGS) $(LIB_EECS467)
 
 clean:
 	@rm -f *.o *~ *.a
