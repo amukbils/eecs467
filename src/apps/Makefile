@@ -28,11 +28,14 @@ BIN_EECS467_REXARM_EXAMPLE = $(BIN_PATH)/eecs467_rexarm_example
 BIN_EECS467_MAEBOT_EXAMPLE = $(BIN_PATH)/eecs467_maebot_example
 BIN_EECS467_MAEBOT_VIDEO_TELOP = $(BIN_PATH)/eecs467_maebot_video_telop
 BIN_EECS467_MAEBOT_A0 = $(BIN_PATH)/eecs467_maebot_a0
+BIN_MAEBOT_HELLO_WORLD = $(BIN_PATH)/maebot_hello_world
+BIN_MAEBOT_GUI = $(BIN_PATH)/maebot_gui
 
 ALL = $(LIB_EECS467) $(BIN_EECS467_GUI_EXAMPLE) $(BIN_EECS467_REXARM_EXAMPLE) \
       $(BIN_EECS467_MAEBOT_EXAMPLE) $(BIN_EECS467_MAEBOT_VIDEO_TELOP) \
       $(BIN_REXARM_DEBUG_GUI) $(BIN_REXARM_SEQUENCE_TEST) \
-      $(BIN_EECS467_MAEBOT_A0)
+      $(BIN_EECS467_MAEBOT_A0) $(BIN_MAEBOT_HELLO_WORLD) \
+      $(BIN_MAEBOT_GUI)
 
 all: $(ALL)
 
@@ -65,6 +68,14 @@ $(BIN_EECS467_MAEBOT_VIDEO_TELOP): maebot_video_teleop.o $(LIBDEPS)
 	@$(CC) -o $@ $^ $(LDFLAGS)
 
 $(BIN_EECS467_MAEBOT_A0): maebot_a0.o $(LIB_EECS467) $(LIBDEPS)
+	@echo "\t$@"
+	@$(CC) -o $@ $^ $(LDFLAGS) $(LIB_EECS467)
+
+$(BIN_MAEBOT_HELLO_WORLD): maebot_hello_world.o $(LIBDEPS)
+	@echo "\t$@"
+	@$(CC) -o $@ $^ $(LDFLAGS)
+
+$(BIN_MAEBOT_GUI): maebot_gui.o $(LIB_EECS467) $(LIBDEPS)
 	@echo "\t$@"
 	@$(CC) -o $@ $^ $(LDFLAGS) $(LIB_EECS467)
 
