@@ -204,7 +204,7 @@ sensor_data_handler (const lcm_recv_buf_t *rbuf, const char *channel,
     veloy = veloy + (accel_x*sin(angle) + accel_y*cos(angle))*delta_t;
 
     // convert velocity to distance
-    distx = distx + velox*delta_t;
+    distx = distx + velox*delt_t;
     disty = disty + veloy*delta_t;
     
     // save the variables to the state variable (just a feeling this is a good thing to do)
