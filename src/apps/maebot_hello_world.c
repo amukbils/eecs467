@@ -80,6 +80,7 @@ struct state {
     pthread_mutex_t move_mutex;
 //    maebot_laser_scan_t *laser_info;
     bool need_scan;
+    bool need_init;
 
     // bot info
     double right_prev_dist;
@@ -143,6 +144,12 @@ motor_feedback_handler (const lcm_recv_buf_t *rbuf, const char *channel,
 
     char cur_move = 's';
 
+    if (state->need_init){
+        state->right_prev_dist = (msg->encoder_right_ticks/480.0) * 0.032 * 3.14;
+        state->left_prev_dist = (msg->encoder_left_ticks/480.0) * 0.032 * 3.14;
+        state->need_init = false;
+    }
+
     //update the distance traveled since last timestep
     double cur_dist = (msg->encoder_right_ticks/480.0) * 0.032 * 3.14;
     double right_step = cur_dist - state->right_prev_dist;
@@ -156,7 +163,7 @@ motor_feedback_handler (const lcm_recv_buf_t *rbuf, const char *channel,
 
     //odometry
     double s_ = (right_step + left_step)/2;
-    double delta_theta = (right_step - left_step)/0.04;
+    double delta_theta = (right_step - left_step)/0.08;
     double alpha = delta_theta/2;
     double x = cos(state->theta_0 + alpha) * s_ + state->x_0; //tot dist traveled
     double y = sin(state->theta_0 + alpha) * s_ + state->y_0; //tot dist traveled
@@ -182,14 +189,14 @@ motor_feedback_handler (const lcm_recv_buf_t *rbuf, const char *channel,
             state->turn = 1;
             state->short_edge = 0; 
             state->eCount++;
-            state->stop_turn_theta = theta + 1.0; 
+            state->stop_turn_theta = theta + 1.57; 
             cur_move = 't';
         } else if (state->dist_edge >= 0.9144 ){ //long edge, 3ft
             state->dist_edge = 0.0;
             state->turn = 1;
             state->short_edge = 1;
             state->eCount++;
-            state->stop_turn_theta = theta + 1.0; 
+            state->stop_turn_theta = theta + 1.57; 
             cur_move = 't';
         } else { //continue along the edge
             state->turn = 0;
@@ -228,6 +235,29 @@ motor_feedback_handler (const lcm_recv_buf_t *rbuf, const char *channel,
     printf("distance_along_edge:\t\t%f\n", state->dist_edge);
     printf("Edges:\t\t%d\n", state->eCount);
 }
+
+ensor_data_handler (const lcm_recv_buf_t *rbuf, const char *channel,
+                     const maebot_sensor_data_t *msg, void *user)
+{
+    int res = system ("clear");
+    if (res)
+        printf ("system clear failed\n");
+
+    printf ("Subscribed to channel: MAEBOT_SENSOR_DATA\n");
+    printf ("utime: %"PRId64"\n", msg->utime);
+    printf ("accel[0, 1, 2]: %d,\t%d,\t%d\n",
+            msg->accel[0], msg->accel[1], msg->accel[2]);
+    printf ("gyro[0, 1, 2]: %d,\t%d,\t%d\n\n\n",
+            msg->gyro[0], msg->gyro[1], msg->gyro[2]);
+    printf ("gyro_int[0, 1, 2]: %"PRId64",\t%"PRId64",\t%"PRId64"\n",
+    msg->gyro_int[0], msg->gyro_int[1], msg->gyro_int[2]);
+    printf ("line_sensors[0, 1, 2]: %d,\t%d,\t%d\n",
+    msg->line_sensors[0], msg->line_sensors[1], msg->line_sensors[2]);
+    printf ("range: %d\n", msg->range);
+    printf ("user_button_pressed: %s\n", msg->user_button_pressed ? "true" : "false");
+    printf ("power_button_pressed: %s\n", msg->power_button_pressed ? "true" : "false");
+}
+
 
 void *
 receive_lcm_msg (void *data)
@@ -311,8 +341,6 @@ state_create (void)
     printf ("utime,\t\tleft_ticks,\tright_ticks\n");
 
     //initilize bot
-    state->right_prev_dist = 0.0;
-    state->left_prev_dist = 0.0;
     state->theta_0 = 0.0;
     state->x_0 = 0.0;
     state->y_0 = 0.0;
@@ -322,6 +350,7 @@ state_create (void)
     state->eCount = 0;
     state->stop_turn_theta = 0.0;
     state->move = 's';
+    state->need_init = true;
 
     //state->vxworld = vx_world_create ();
     //state->vxeh = calloc (1, sizeof(*state->vxeh));
