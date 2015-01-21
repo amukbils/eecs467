@@ -230,7 +230,7 @@ motor_feedback_handler (const lcm_recv_buf_t *rbuf, const char *channel,
             state->turn = 1;
             state->short_edge = 0; 
             state->eCount++;
-            state->stop_turn_theta = theta + 1.57; 
+            state->stop_turn_theta = theta + 0.25; 
             cur_move = 't';
             state->first_turn = true;
 
@@ -244,7 +244,7 @@ motor_feedback_handler (const lcm_recv_buf_t *rbuf, const char *channel,
             state->turn = 1;
             state->short_edge = 1;
             state->eCount++;
-            state->stop_turn_theta = theta + 1.57; 
+            state->stop_turn_theta = theta + 0.25; 
             cur_move = 't';
             state->first_turn = true;
         
