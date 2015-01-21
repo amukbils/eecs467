@@ -134,7 +134,7 @@ static void take_picture(state_t *state)
 	save_image = image_convert_u32(frmd);
 	
 	char path[100];
-	snprintf(path, 100, "/home/team2/eecs467/corner_shot_%d.ppm", state->eCount);
+	snprintf(path, 100, "/home/team2/eecs467/corner_shot_%d", state->eCount);
 	
 	
 	image_u32_write_pnm(save_image, path); //this path can be changed
