@@ -84,6 +84,7 @@ struct state {
     //int32_t rays[4];
     int new_laser;
     int odometry_count;
+    int imu_count;
 };
 
 // save laser information
@@ -174,30 +175,31 @@ sensor_data_handler (const lcm_recv_buf_t *rbuf, const char *channel,
                      const maebot_sensor_data_t *msg, void *user)
 {
 	
-    printf("imu ...\n");
 
     state_t *state = user;
 
-    static int64_t prev_time_stamp = 0;
+    static double prev_time_stamp = 0;
 
-    static int angle = 0;
-    static int velox = 0;
-    static int veloy = 0;
-    static int distx = 0;
-    static int disty = 0;
+    static double angle = 0;
+    static double velox = 0;
+    static double veloy = 0;
+    static double distx = 0;
+    static double disty = 0;
 
-    int64_t delta_t = msg->utime-prev_time_stamp;
+    prev_time_stamp = prev_time_stamp == 0? msg->utime/1000000.0 : prev_time_stamp;
+
+    double delta_t = (msg->utime/1000000.0)-prev_time_stamp;
     
 
     // read gyro data
-    int16_t gyro_z = msg->gyro[2]/131;
+    double gyro_z = (msg->gyro[2]/131.0)*(M_PI/180.0);
     
     // convert gyro to angle
     angle = angle + gyro_z*delta_t;
 
     // get accel data
-    int16_t accel_x = msg->accel[0]/16384;
-    int16_t accel_y = msg->accel[1]/16384;
+    double accel_x = (msg->accel[0]/16384.0)*9.8;
+    double accel_y = (msg->accel[1]/16384.0)*9.8;
     
     // convert to velocity
     velox = velox + (accel_x*cos(angle) - accel_y*sin(angle))*delta_t;
@@ -208,15 +210,22 @@ sensor_data_handler (const lcm_recv_buf_t *rbuf, const char *channel,
     disty = disty + veloy*delta_t;
     
     // save the variables to the state variable (just a feeling this is a good thing to do)
-    state->x_pos = distx;
-    state->y_pos = disty;
+    //state->x_pos = distx;
+    //state->y_pos = disty;
     
-    float point[3] = {state->x_pos, state->y_pos, 0.0f};
+    prev_time_stamp = msg->utime/1000000.0;
+    
+    // all dots have its own layer so they don't erase each other
+    char buff_name[30];
+    sprintf(buff_name, "imu-buff-%d", state->imu_count++);
+    
+    float point[3] = {distx, disty, 0.0f};
+    printf("imu\t%f\t\t%f\n", distx, disty);
 
     pthread_mutex_lock(&state->gui_mutex);
-    vx_buffer_t *buff = vx_world_get_buffer (state->vxworld, "IMU Data");
+    vx_buffer_t *buff = vx_world_get_buffer (state->vxworld, buff_name);
     vx_resc_t *verts = vx_resc_copyf(point, 3);
-    vx_buffer_add_back(buff, vxo_points(verts, 1, vxo_points_style(vx_red, 2.0f)));
+    vx_buffer_add_back(buff, vxo_points(verts, 1, vxo_points_style(vx_green, 2.0f)));
     vx_buffer_swap (buff);
     pthread_mutex_unlock(&state->gui_mutex);
 	
@@ -336,6 +345,7 @@ state_create (void)
 
     state->new_laser = -4;
     state->odometry_count = 0;
+    state->imu_count = 0;
     state->need_init = true;
 
     return state;

@@ -97,6 +97,7 @@ struct state {
 	//maebot_laser_scan_t *laser_info;
     bool need_scan;
     bool need_init;
+    bool first_turn;
 
     // bot info
     double right_prev_dist;
@@ -205,7 +206,12 @@ motor_feedback_handler (const lcm_recv_buf_t *rbuf, const char *channel,
     double theta = delta_theta + state->theta_0;
 
     if (state->turn){ //making the turn
-        if(theta >= state->stop_turn_theta){ //stop turining
+        
+        if(state->first_turn){
+            change_need_scan(true, state);
+            cur_move = 's';
+            state->first_turn = false;
+        } else if (theta >= state->stop_turn_theta){ //stop turining
             state->turn = 0; 
             cur_move = 'f'; 
         } else { //keep turning
@@ -226,10 +232,13 @@ motor_feedback_handler (const lcm_recv_buf_t *rbuf, const char *channel,
             state->eCount++;
             state->stop_turn_theta = theta + 1.57; 
             cur_move = 't';
+            state->first_turn = true;
 
-	    // take a picture
-	    take_picture(state);
-	    
+    	    // take a scan and a picture
+            // change_need_scan(true, state);
+	        take_picture(state);
+            usleep(250000);	    
+
         } else if (state->dist_edge >= 0.9144 ){ //long edge, 3ft
             state->dist_edge = 0.0;
             state->turn = 1;
@@ -237,8 +246,11 @@ motor_feedback_handler (const lcm_recv_buf_t *rbuf, const char *channel,
             state->eCount++;
             state->stop_turn_theta = theta + 1.57; 
             cur_move = 't';
-
-	    take_picture(state);
+            state->first_turn = true;
+        
+            //change_need_scan(true, state);
+    	    take_picture(state);
+            usleep(250000);	    
 
         } else { //continue along the edge
             state->turn = 0;
@@ -277,29 +289,6 @@ motor_feedback_handler (const lcm_recv_buf_t *rbuf, const char *channel,
     printf("distance_along_edge:\t\t%f\n", state->dist_edge);
     printf("Edges:\t\t%d\n", state->eCount);
 }
-
-ensor_data_handler (const lcm_recv_buf_t *rbuf, const char *channel,
-                     const maebot_sensor_data_t *msg, void *user)
-{
-    int res = system ("clear");
-    if (res)
-        printf ("system clear failed\n");
-
-    printf ("Subscribed to channel: MAEBOT_SENSOR_DATA\n");
-    printf ("utime: %"PRId64"\n", msg->utime);
-    printf ("accel[0, 1, 2]: %d,\t%d,\t%d\n",
-            msg->accel[0], msg->accel[1], msg->accel[2]);
-    printf ("gyro[0, 1, 2]: %d,\t%d,\t%d\n\n\n",
-            msg->gyro[0], msg->gyro[1], msg->gyro[2]);
-    printf ("gyro_int[0, 1, 2]: %"PRId64",\t%"PRId64",\t%"PRId64"\n",
-    msg->gyro_int[0], msg->gyro_int[1], msg->gyro_int[2]);
-    printf ("line_sensors[0, 1, 2]: %d,\t%d,\t%d\n",
-    msg->line_sensors[0], msg->line_sensors[1], msg->line_sensors[2]);
-    printf ("range: %d\n", msg->range);
-    printf ("user_button_pressed: %s\n", msg->user_button_pressed ? "true" : "false");
-    printf ("power_button_pressed: %s\n", msg->power_button_pressed ? "true" : "false");
-}
-
 
 void *
 receive_lcm_msg (void *data)
@@ -393,6 +382,7 @@ state_create (void)
     state->stop_turn_theta = 0.0;
     state->move = 's';
     state->need_init = true;
+    state->first_turn = false;
 
     return state;
 }
