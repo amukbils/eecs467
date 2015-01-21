@@ -17,16 +17,7 @@
 #include "lcmtypes/maebot_motor_feedback_t.h"
 #include "lcmtypes/maebot_laser_scan_t.h"
 #include "lcmtypes/maebot_motor_command_t.h"
-#include "lcmtypes/maebot_motor_feedback_t.h"
-
-// core api
-//#include "vx/vx.h"
-//#include "vx/vx_util.h"
-//#include "vx/vx_remote_display_source.h"
-//#include "vx/gtk/vx_gtk_display_source.h"
-
-// drawables
-//#include "vx/vxo_drawables.h"  
+#include "lcmtypes/maebot_motor_feedback_t.h" 
 
 // common
 #include "common/getopt.h"
@@ -38,7 +29,7 @@
 #include "imagesource/image_u32.h"
 #include "imagesource/image_source.h"
 #include "imagesource/image_convert.h"
-#include "eecs467_util.h" // This is where a lot of the internals live
+#include "eecs467_util.h" // This is where a lot of the internals livemovement
 
 //camera
 #include <gtk/gtk.h>
@@ -72,22 +63,7 @@ struct state {
 	image_source_t *isrc;
 	int fidx;
 
-	//GtkWidget *window;
-	//GtkWidget *image;	
-
-    // image stuff
-//    char *img_url;
-//    int img_height;
-//    int img_width;
-
-    // vx stuff
-    //vx_application_t vxapp;
-    //vx_world_t *vxworld; // where vx objects are live
-    //vx_event_handler_t *vxeh; // for getting mouse, key, and touch events
-    //vx_mouse_event_t last_mouse_event;
-
     // threads
-    //pthread_t animate_thread;
     pthread_t lcm_thread;
     pthread_t drive_square_thread;
 
@@ -97,7 +73,6 @@ struct state {
 	//maebot_laser_scan_t *laser_info;
     bool need_scan;
     bool need_init;
-    bool first_turn;
 
     // bot info
     double right_prev_dist;
@@ -109,7 +84,7 @@ struct state {
 
     double dist_edge; //total distance traveled alnog one edge
 
-    int turn; //bool
+    bool turn; 
     int short_edge; //bool
     int eCount; //edge count, 12 edges = 3 rotations around square
     char move;
@@ -205,17 +180,13 @@ motor_feedback_handler (const lcm_recv_buf_t *rbuf, const char *channel,
     double y = sin(state->theta_0 + alpha) * s_ + state->y_0; //tot dist traveled
     double theta = delta_theta + state->theta_0;
 
-    if (state->turn){ //making the turn
-        
-        if(state->first_turn){
-            change_need_scan(true, state);
-            cur_move = 's';
-            state->first_turn = false;
-        } else if (theta >= state->stop_turn_theta){ //stop turining
-            state->turn = 0; 
+	if (state->turn){ //making the turn       
+
+       if (theta >= state->stop_turn_theta){ //stop turining
+            state->turn = false; 
             cur_move = 'f'; 
         } else { //keep turning
-            state->turn = 1; 
+            state->turn = true; 
             cur_move = 't'; 
         }
     } else { //traveling forward along an edge
@@ -227,33 +198,26 @@ motor_feedback_handler (const lcm_recv_buf_t *rbuf, const char *channel,
         if( (state->dist_edge >= 0.6096) && state->short_edge) //short edge, 2ft
         {
             state->dist_edge = 0.0; 
-            state->turn = 1;
             state->short_edge = 0; 
             state->eCount++;
-            state->stop_turn_theta = theta + 1.57; 
-            cur_move = 't';
-            state->first_turn = true;
-
-    	    // take a scan and a picture
-            // change_need_scan(true, state);
-	        take_picture(state);
-            usleep(250000);	    
+            state->stop_turn_theta = theta + 0.5; 
+			state->turn = true;
+            cur_move = 's'; //data collect
+			take_picture(state);
+	   		change_need_scan(true, state); 
 
         } else if (state->dist_edge >= 0.9144 ){ //long edge, 3ft
             state->dist_edge = 0.0;
-            state->turn = 1;
             state->short_edge = 1;
             state->eCount++;
-            state->stop_turn_theta = theta + 1.57; 
-            cur_move = 't';
-            state->first_turn = true;
-        
-            //change_need_scan(true, state);
-    	    take_picture(state);
-            usleep(250000);	    
+            state->stop_turn_theta = theta + 0.5; 
+			state->turn = true;
+            cur_move = 's'; //data collect
+			take_picture(state);
+	   		change_need_scan(true, state); 
 
         } else { //continue along the edge
-            state->turn = 0;
+            state->turn = true;
             cur_move = 'f';
         }
     }
@@ -338,6 +302,7 @@ void * drive_square_loop (void *arg) {
             {
                 msg.motor_left_speed = MTR_STOP;
                 msg.motor_right_speed = MTR_STOP;
+				usleep(2500000);
                 break;
             }
             default:
@@ -376,13 +341,12 @@ state_create (void)
     state->x_0 = 0.0;
     state->y_0 = 0.0;
     state->dist_edge = 0.0;
-    state->turn = 0; //false
+    state->turn = false; //false
     state->short_edge = 0; //false
     state->eCount = 0;
     state->stop_turn_theta = 0.0;
     state->move = 's';
     state->need_init = true;
-    state->first_turn = false;
 
     return state;
 }
