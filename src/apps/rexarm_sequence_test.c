@@ -36,7 +36,7 @@ void *
 command_loop (void *user)
 {
     state_t *state = user;
-    const int hz = 2;
+    const int hz = 0.5;
 
     dynamixel_command_list_t cmds;
     cmds.len = NUM_SERVOS;
@@ -55,7 +55,7 @@ command_loop (void *user)
         
         moving_id = ((moving_id == 5) ? 0 : moving_id + 1);
 
-        usleep (1000000/hz);
+        usleep (2000000);
     }
 
     free (cmds.commands);
