@@ -131,7 +131,6 @@ static void
 motor_feedback_handler (const lcm_recv_buf_t *rbuf, const char *channel,
                         const maebot_motor_feedback_t *msg, void *state_p)
 {
-    printf("odometry\n");
     state_t *state = state_p;
 
     if (state->need_init){
@@ -174,8 +173,6 @@ static void
 sensor_data_handler (const lcm_recv_buf_t *rbuf, const char *channel,
                      const maebot_sensor_data_t *msg, void *user)
 {
-	
-
     state_t *state = user;
 
     static double prev_time_stamp = 0;
@@ -186,34 +183,33 @@ sensor_data_handler (const lcm_recv_buf_t *rbuf, const char *channel,
     static double distx = 0;
     static double disty = 0;
 
-    prev_time_stamp = prev_time_stamp == 0? msg->utime/1000000.0 : prev_time_stamp;
+    prev_time_stamp = prev_time_stamp == 0 ? msg->utime: prev_time_stamp;
 
-    double delta_t = (msg->utime/1000000.0)-prev_time_stamp;
+    double delta_t = (msg->utime - prev_time_stamp)/1000000.0;
     
-
     // read gyro data
     double gyro_z = (msg->gyro[2]/131.0)*(M_PI/180.0);
     
     // convert gyro to angle
-    angle = angle + gyro_z*delta_t;
+    angle = angle + gyro_z*delta_t/2;
 
     // get accel data
     double accel_x = (msg->accel[0]/16384.0)*9.8;
     double accel_y = (msg->accel[1]/16384.0)*9.8;
-    
-    // convert to velocity
-    velox = velox + (accel_x*cos(angle) - accel_y*sin(angle))*delta_t;
-    veloy = veloy + (accel_x*sin(angle) + accel_y*cos(angle))*delta_t;
+   
+    double acc_x = accel_x*cos(angle) - accel_y*sin(angle);
+    double acc_y = accel_x*sin(angle) + accel_y*cos(angle);
 
-    // convert velocity to distance
-    distx = distx + velox*delta_t;
-    disty = disty + veloy*delta_t;
+    // get distance 
+    distx = distx + velox*delta_t + 0.5*acc_x*delta_t*delta_t;
+    disty = disty + veloy*delta_t + 0.5*acc_y*delta_t*delta_t;
+
+    // get new velocity
+    velox = velox + acc_x*delta_t;
+    veloy = veloy + acc_y*delta_t; 
     
-    // save the variables to the state variable (just a feeling this is a good thing to do)
-    //state->x_pos = distx;
-    //state->y_pos = disty;
-    
-    prev_time_stamp = msg->utime/1000000.0;
+    angle = angle + gyro_z*delta_t/2;
+    prev_time_stamp = msg->utime;
     
     // all dots have its own layer so they don't erase each other
     char buff_name[30];
