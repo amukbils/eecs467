@@ -109,8 +109,8 @@ laser_handler (const lcm_recv_buf_t *rbuf,
         points[6*i+0] = state->x_pos;
         points[6*i+1] = state->y_pos;
         points[6*i+2] = 0.0f;
-        points[6*i+3] = cos(state->a_pos + msg->thetas[i]) * msg->ranges[i] + state->x_pos;
-        points[6*i+4] = sin(state->a_pos + msg->thetas[i]) * msg->ranges[i] + state->y_pos;
+        points[6*i+3] = cos(state->a_pos - msg->thetas[i]) * msg->ranges[i] + state->x_pos;
+        points[6*i+4] = sin(state->a_pos - msg->thetas[i]) * msg->ranges[i] + state->y_pos;
         points[6*i+5] = 0.0f;
     }
 
@@ -162,10 +162,10 @@ motor_feedback_handler (const lcm_recv_buf_t *rbuf, const char *channel,
     sprintf(buff_name, "odometry-buff-%d", state->odometry_count++);
 
     pthread_mutex_lock(&state->gui_mutex);
-    vx_buffer_t *buff = vx_world_get_buffer (state->vxworld, buff_name);
-    vx_resc_t *verts = vx_resc_copyf(point, 3);
-    vx_buffer_add_back(buff, vxo_points(verts, 1, vxo_points_style(vx_red, 2.0f)));
-    vx_buffer_swap (buff);
+//    vx_buffer_t *buff = vx_world_get_buffer (state->vxworld, buff_name);
+//    vx_resc_t *verts = vx_resc_copyf(point, 3);
+//    vx_buffer_add_back(buff, vxo_points(verts, 1, vxo_points_style(vx_red, 2.0f)));
+//    vx_buffer_swap (buff);
     pthread_mutex_unlock(&state->gui_mutex);
 }
 
@@ -219,10 +219,10 @@ sensor_data_handler (const lcm_recv_buf_t *rbuf, const char *channel,
     printf("imu\t%f\t\t%f\n", distx, disty);
 
     pthread_mutex_lock(&state->gui_mutex);
-    vx_buffer_t *buff = vx_world_get_buffer (state->vxworld, buff_name);
-    vx_resc_t *verts = vx_resc_copyf(point, 3);
-    vx_buffer_add_back(buff, vxo_points(verts, 1, vxo_points_style(vx_green, 2.0f)));
-    vx_buffer_swap (buff);
+//    vx_buffer_t *buff = vx_world_get_buffer (state->vxworld, buff_name);
+//    vx_resc_t *verts = vx_resc_copyf(point, 3);
+//    vx_buffer_add_back(buff, vxo_points(verts, 1, vxo_points_style(vx_green, 2.0f)));
+//    vx_buffer_swap (buff);
     pthread_mutex_unlock(&state->gui_mutex);
 	
 	
